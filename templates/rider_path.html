@@ -1,0 +1,374 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Rider Path on Unmapped Roads</title>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+            <script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
+            <style>
+                body { margin: 0; padding: 0; }
+                #map { width: 100%; height: 100vh; }
+                .info {
+                    padding: 6px 8px;
+                    font: 14px/16px Arial, Helvetica, sans-serif;
+                    background: white;
+                    background: rgba(255,255,255,0.8);
+                    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                    border-radius: 5px;
+                }
+                .legend {
+                    line-height: 18px;
+                    color: #555;
+                }
+                .legend i {
+                    width: 18px;
+                    height: 18px;
+                    float: left;
+                    margin-right: 8px;
+                    opacity: 0.7;
+                }
+                #downloadButton {
+                    position: absolute;
+                    top: 150px;
+                    right: 10px;
+                    z-index: 1000;
+                    background-color: white;
+                    padding: 5px 10px;
+                    border: 1px solid #ccc;
+                    cursor: pointer;
+                }
+                #analyzeButton {
+                    position: absolute;
+                    top: 60px;
+                    right: 10px;
+                    z-index: 1000;
+                    background-color: white;
+                    padding: 5px 10px;
+                    border: 1px solid #ccc;
+                    cursor: pointer;
+                }
+                #pathToggle {
+                    position: absolute;
+                    top: 110px;
+                    right: 10px;
+                    z-index: 1000;
+                    background-color: white;
+                    padding: 5px 10px;
+                    border: 1px solid #ccc;
+                }
+                #coordinatesPanel {
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    z-index: 1000;
+                    background-color: white;
+                    background: rgba(255,255,255,0.9);
+                    padding: 10px;
+                    border-radius: 5px;
+                    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    max-width: 300px;
+                }
+                #coordinatesPanel h4 {
+                    margin: 0 0 8px 0;
+                    font-size: 14px;
+                }
+                #coordinatesPanel div {
+                    margin-bottom: 4px;
+                }
+                #copyCoords {
+                    margin-top: 8px;
+                    background-color: #f8f8f8;
+                    border: 1px solid #ddd;
+                    padding: 4px 8px;
+                    cursor: pointer;
+                    font-size: 11px;
+                }
+                #copyCoords:hover {
+                    background-color: #eee;
+                }
+                #validityPanel {
+                    position: absolute;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 1000;
+                    background-color: white;
+                    background: rgba(255,255,255,0.9);
+                    padding: 10px;
+                    border-radius: 5px;
+                    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    max-width: 200px;
+                }
+                #validityPanel h4 {
+                    margin: 0 0 8px 0;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+            <button id="downloadButton">Download Segmented Map</button>
+            <button id="analyzeButton">Analyze Current View</button>
+            <select id="pathToggle">
+                <option value="all">All Paths</option>
+    <option value="0">Path 1</option><option value="1">Path 2</option>
+            </select>
+            <div id="coordinatesPanel">
+                <h4>Viewport Coordinates</h4>
+                <div><b>Bottom-Left:</b> <span id="bottomLeft">-</span></div>
+                <div><b>Top-Right:</b> <span id="topRight">-</span></div>
+                <div><b>Zoom Level:</b> <span id="zoomLevel">-</span></div>
+                <button id="copyCoords">Copy Coordinates</button>
+            </div>
+            <div id="validityPanel">
+                <h4>Path Validity</h4>
+                <div><b>Is Valid Road:</b> <span id="pathValidity">-</span></div>
+            </div>
+            <script>
+    
+            var map = L.map('map', { zoomControl: true });
+
+            var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+            var satelliteLayer = L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=uArsHJuTKubTu0k8Gj7O', {
+                tileSize: 512,
+                zoomOffset: -1,
+                minZoom: 1,
+                maxZoom: 18,
+                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+                crossOrigin: true
+            });
+
+            satelliteLayer.addTo(map);
+
+            var baseLayers = {
+                "OpenStreetMap": osmLayer,
+                "Satellite": satelliteLayer
+            };
+            L.control.layers(baseLayers).addTo(map);
+
+            var allCoordinates = [{'latitude': 22.846275, 'longitude': 86.189584, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846339, 'longitude': 86.189522, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846458, 'longitude': 86.189429, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846537, 'longitude': 86.189286, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846619, 'longitude': 86.189268, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846747, 'longitude': 86.18926, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846784, 'longitude': 86.189321, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.845781, 'longitude': 86.197974, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846043, 'longitude': 86.198097, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.84628, 'longitude': 86.198178, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846606, 'longitude': 86.198355, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846952, 'longitude': 86.198371, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847259, 'longitude': 86.198468, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847516, 'longitude': 86.19865, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847704, 'longitude': 86.198859, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847837, 'longitude': 86.199079, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848154, 'longitude': 86.199213, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848376, 'longitude': 86.199278, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848386, 'longitude': 86.199396, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848268, 'longitude': 86.199777, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848228, 'longitude': 86.199975, 'surface': 'unknown', 'path_index': 1}];
+            var unknownSurfaceCoordinates = [{'latitude': 22.846275, 'longitude': 86.189584, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846339, 'longitude': 86.189522, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846458, 'longitude': 86.189429, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846537, 'longitude': 86.189286, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846619, 'longitude': 86.189268, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846747, 'longitude': 86.18926, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.846784, 'longitude': 86.189321, 'surface': 'unknown', 'path_index': 0}, {'latitude': 22.845781, 'longitude': 86.197974, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846043, 'longitude': 86.198097, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.84628, 'longitude': 86.198178, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846606, 'longitude': 86.198355, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.846952, 'longitude': 86.198371, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847259, 'longitude': 86.198468, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847516, 'longitude': 86.19865, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847704, 'longitude': 86.198859, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.847837, 'longitude': 86.199079, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848154, 'longitude': 86.199213, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848376, 'longitude': 86.199278, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848386, 'longitude': 86.199396, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848268, 'longitude': 86.199777, 'surface': 'unknown', 'path_index': 1}, {'latitude': 22.848228, 'longitude': 86.199975, 'surface': 'unknown', 'path_index': 1}];
+
+            console.log('All Coordinates:', allCoordinates);
+            console.log('Unknown Coordinates:', unknownSurfaceCoordinates);
+
+            var pathLayers = {};
+            var allPathPoints = [];
+
+            allCoordinates.forEach(function(point) {
+                if (!pathLayers[point.path_index]) {
+                    pathLayers[point.path_index] = [];
+                }
+                pathLayers[point.path_index].push([point.latitude, point.longitude]);
+                allPathPoints.push([point.latitude, point.longitude]);
+            });
+
+            var pathLayerGroups = {};
+            for (var index in pathLayers) {
+                pathLayerGroups[index] = L.layerGroup();
+                for (var i = 0; i < pathLayers[index].length - 1; i++) {
+                    var coord = allCoordinates.find(c => c.path_index == index && 
+                        c.latitude == pathLayers[index][i][0] && 
+                        c.longitude == pathLayers[index][i][1]);
+                    var color = coord.surface === 'unknown' ? 'red' : 'blue';
+                    var weight = color === 'red' ? 6 : 3;
+                    L.polyline([pathLayers[index][i], pathLayers[index][i+1]], {color: color, weight: weight})
+                        .addTo(pathLayerGroups[index]);
+                }
+            }
+
+            var unknownMarkers = L.layerGroup();
+            unknownSurfaceCoordinates.forEach(function(point) {
+                L.circleMarker([point.latitude, point.longitude], {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.5,
+                    radius: 8
+                }).bindPopup('Unknown Surface').addTo(unknownMarkers);
+            });
+            unknownMarkers.addTo(map);
+
+            var legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function() {
+                var div = L.DomUtil.create('div', 'info legend');
+                div.innerHTML = '<i style="background:#0000ff"></i> Known Surface<br><i style="background:#ff0000"></i> Unknown Surface';
+                return div;
+            };
+            legend.addTo(map);
+
+            if (allPathPoints.length > 0) {
+                var bounds = L.latLngBounds(allPathPoints);
+                map.fitBounds(bounds, { padding: [50, 50] });
+                for (var index in pathLayerGroups) {
+                    pathLayerGroups[index].addTo(map);
+                }
+            } else {
+                map.setView([22.846275, 86.189584], 15);
+                console.log('No path points, using default view');
+            }
+
+            document.getElementById('pathToggle').addEventListener('change', function(e) {
+                var selectedPath = e.target.value;
+                for (var index in pathLayerGroups) {
+                    map.removeLayer(pathLayerGroups[index]);
+                }
+                if (selectedPath === 'all') {
+                    for (var index in pathLayerGroups) {
+                        pathLayerGroups[index].addTo(map);
+                    }
+                    if (allPathPoints.length > 0) {
+                        map.fitBounds(L.latLngBounds(allPathPoints), { padding: [50, 50] });
+                    }
+                } else {
+                    pathLayerGroups[selectedPath].addTo(map);
+                    if (pathLayers[selectedPath].length > 0) {
+                        map.fitBounds(L.latLngBounds(pathLayers[selectedPath]), { padding: [50, 50] });
+                    }
+                }
+            });
+
+            function updateCoordinatesDisplay() {
+                var bounds = map.getBounds();
+                var bottomLeft = bounds.getSouthWest();
+                var topRight = bounds.getNorthEast();
+                var zoom = map.getZoom();
+                document.getElementById('bottomLeft').textContent = bottomLeft.lat.toFixed(6) + ", " + bottomLeft.lng.toFixed(6);
+                document.getElementById('topRight').textContent = topRight.lat.toFixed(6) + ", " + topRight.lng.toFixed(6);
+                document.getElementById('zoomLevel').textContent = zoom;
+            }
+
+            map.on('moveend', updateCoordinatesDisplay);
+            setTimeout(function() {
+                updateCoordinatesDisplay();
+                map.invalidateSize();
+            }, 100);
+
+            document.getElementById('copyCoords').addEventListener('click', function() {
+                var bounds = map.getBounds();
+                var bottomLeft = bounds.getSouthWest();
+                var topRight = bounds.getNorthEast();
+                var coordText = "Bottom-Left: " + bottomLeft.lat.toFixed(6) + ", " + bottomLeft.lng.toFixed(6) + "\n" +
+                               "Top-Right: " + topRight.lat.toFixed(6) + ", " + topRight.lng.toFixed(6) + "\n" +
+                               "Zoom Level: " + map.getZoom();
+                navigator.clipboard.writeText(coordText)
+                    .then(() => { alert("Coordinates copied to clipboard!"); })
+                    .catch(err => {
+                        console.error('Could not copy text: ', err);
+                        var textArea = document.createElement("textarea");
+                        textArea.value = coordText;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(textArea);
+                        alert("Coordinates copied to clipboard!");
+                    });
+            });
+
+            document.getElementById('downloadButton').addEventListener('click', function() {
+                leafletImage(map, function(err, canvas) {
+                    if (err) {
+                        console.error('Error capturing map:', err);
+                        alert('Error capturing map: ' + err);
+                        return;
+                    }
+                    var img = document.createElement('img');
+                    var dimensions = map.getSize();
+                    img.width = dimensions.x;
+                    img.height = dimensions.y;
+                    img.src = canvas.toDataURL();
+
+                    var bounds = map.getBounds();
+                    var bottomLeft = bounds.getSouthWest();
+                    var topRight = bounds.getNorthEast();
+
+                    fetch('http://localhost:8000/segment_image/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'image_data=' + encodeURIComponent(img.src) +
+                              '&bottom_left_lat=' + bottomLeft.lat +
+                              '&bottom_left_lng=' + bottomLeft.lng +
+                              '&top_right_lat=' + topRight.lat +
+                              '&top_right_lng=' + topRight.lng
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Update validity text box
+                        document.getElementById('pathValidity').textContent = data.is_valid ? 'Yes' : 'No';
+
+                        // Download the segmented mask
+                        fetch(data.mask_url)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            var url = window.URL.createObjectURL(blob);
+                            var link = document.createElement('a');
+                            link.href = url;
+                            link.download = 'segmented_mask.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error processing image: ' + error);
+                    });
+                });
+            });
+
+            document.getElementById('analyzeButton').addEventListener('click', function() {
+                var bounds = map.getBounds();
+                var bottomLeft = bounds.getSouthWest();
+                var topRight = bounds.getNorthEast();
+                console.log("Current viewport for analysis:");
+                console.log("Bottom-Left:", bottomLeft.lat.toFixed(6) + ", " + bottomLeft.lng.toFixed(6));
+                console.log("Top-Right:", topRight.lat.toFixed(6) + ", " + topRight.lng.toFixed(6));
+                console.log("Zoom Level:", map.getZoom());
+
+                leafletImage(map, function(err, canvas) {
+                    var img = document.createElement('img');
+                    var dimensions = map.getSize();
+                    img.width = dimensions.x;
+                    img.height = dimensions.y;
+                    img.src = canvas.toDataURL();
+                    var imageData = img.src;
+                    fetch('/process_image/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'image_data=' + encodeURIComponent(imageData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Error processing image:', data.error);
+                            alert('Error processing image: ' + data.error);
+                        } else {
+                            console.log('Segmentation result:', data.road_coordinates);
+                            alert('Road coordinates: ' + JSON.stringify(data.road_coordinates));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error sending image:', error);
+                        alert('Error sending image: ' + error);
+                    });
+                });
+            });
+        </script>
+        </body>
+        </html>
+    

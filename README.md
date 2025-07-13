@@ -34,7 +34,7 @@ Pipeline output
 <img width="1722" height="328" alt="image" src="https://github.com/user-attachments/assets/5250c48f-9704-4d2e-84c7-d3cf758ff27b" />
 
 ## Segmentation model
-- A MANet was trained on the DeepGlove Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset) over 10 epochs (minimal hyperparameter tuning and epochs were set due to time constraints at the hackathon)
+- A MANet was trained on the DeepGlove Road Extraction dataset over 10 epochs (minimal hyperparameter tuning and epochs were set due to time constraints at the hackathon)
 ### Performance metrics
 <img width="1397" height="579" alt="image" src="https://github.com/user-attachments/assets/049786a3-7691-47c0-9af8-ece5c2bbf805" />
 
@@ -47,4 +47,4 @@ Pipeline output
 ├── templates/      # HTML templates for map visualization
 ├── road_segmentation-bm.pth # Trained model weights
 ├── case1.py # pipeline on sample 1 
-├── case2.py # pipeline on sample 2 
+├── case2.py # pipeline on sample 2

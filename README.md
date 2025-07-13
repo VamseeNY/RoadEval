@@ -1,6 +1,6 @@
 # RoadEval
 - A scalable road mapping system that combines user trip data from EV bikes with satellite imagery to detect frequently traveled, unmapped roads.
-- This project uses a custom road segmentaion moddel trained on the DeepGlobe Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset) achieving 
+- This project uses a custom road segmentaion moddel trained on the DeepGlobe Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset)
 
 ## Pipeline
 1. Data Collection and model initialization
@@ -36,6 +36,7 @@ Pipeline output
 ## Segmentation model
 - A MANet was trained on the DeepGlove Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset) over 10 epochs (minimal hyperparameter tuning and epochs were set due to time constraints at the hackathon)
 ### Performance metrics
+<img width="1397" height="579" alt="image" src="https://github.com/user-attachments/assets/049786a3-7691-47c0-9af8-ece5c2bbf805" />
 
 
 ## Project structure

@@ -40,11 +40,12 @@ Pipeline output
 
 
 ## Project structure
-├── backend.py      # FastAPI server: APIs, model inference, and map HTML generation
-├── frontend.py     # Async client: collects trip data, fetches map, user interaction
-├── main.py         # Simple API for adding/updating places (demo purposes)
-├── static/         # Static files (segmentation masks, analyzed maps)
-├── templates/      # HTML templates for map visualization
-├── road_segmentation-bm.pth # Trained model weights
-├── case1.py # pipeline on sample 1 
-├── case2.py # pipeline on sample 2
+backend.py      # FastAPI server: APIs, model inference, and map HTML generation
+frontend.py     # Async client: collects trip data, fetches map, user interaction
+main.py         # Simple API for adding/updating places (demo purposes)
+static/         # Static files (segmentation masks, analyzed maps)
+templates/      # HTML templates for map visualization
+road_segmentation-bm.pth # Trained model weights
+sample-case-scripts/
+  case1.py # pipeline on sample 1 
+  case2.py # pipeline on sample 2

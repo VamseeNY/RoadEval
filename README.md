@@ -1,6 +1,6 @@
 # RoadEval
 - A scalable road mapping system that combines user trip data from EV bikes with satellite imagery to detect frequently traveled, unmapped roads.
-- This project uses a custom road segmentaion moddel trained on the DeepGlobe Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset)
+- This project uses a custom road segmentation model trained on the DeepGlobe Road Extraction dataset (https://www.kaggle.com/datasets/balraj98/deepglobe-road-extraction-dataset)
 
 ## Pipeline
 1. Data Collection and model initialization
@@ -40,12 +40,12 @@ Pipeline output
 
 
 ## Project structure
-backend.py      # FastAPI server: APIs, model inference, and map HTML generation\
-frontend.py     # Async client: collects trip data, fetches map, user interaction\
-main.py         # Simple API for adding/updating places (demo purposes)\
-static/         # Static files (segmentation masks, analyzed maps)\
-templates/      # HTML templates for map visualization\
-road_segmentation-bm.pth # Trained model weights\
-sample-case-scripts/\
-    case1.py # pipeline on sample 1 \
-    case2.py # pipeline on sample 2
+- backend.py: FastAPI server: APIs, model inference, and map HTML generation
+- frontend.py: Async client: collects trip data, fetches map, user interaction
+- main.py: Simple API for adding/updating places (demo purposes)
+- static/: Contains static files (segmentation masks, analyzed maps)
+- templates/: HTML templates for map visualization
+- road_segmentation-bm.pth: Trained model weights
+- sample-case-scripts/:
+	- case1.py: Pipeline implementation on sample 1
+	- case2.py: Pipeline implementation on sample 2
